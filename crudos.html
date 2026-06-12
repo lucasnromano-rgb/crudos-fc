@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Los Crudos FC</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root {
+    --green: #1a7a3c;
+    --green-light: #25a050;
+    --green-field: #2d8a4e;
+    --gold: #f0b429;
+    --gold-dark: #c8901a;
+    --dark: #0d1117;
+    --dark2: #161b22;
+    --dark3: #21262d;
+    --dark4: #30363d;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --red: #e05252;
+    --blue: #4a90d9;
+    --white: #ffffff;
+    --radius: 12px;
+    --tab-h: 64px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .app-header {
+    background: linear-gradient(135deg, var(--dark2) 0%, #0f1f12 100%);
+    border-bottom: 2px solid var(--green);
+    padding: 12px 16px 10px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .app-header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 3px;
+    color: var(--gold);
+    text-shadow: 0 0 20px rgba(240,180,41,0.4);
+  }
+  .app-header p {
+    font-size: 11px;
+    color: var(--text2);
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    background: var(--dark2);
+    border-bottom: 1px solid var(--dark4);
+    overflow-x: auto;
+    scrollbar-width: none;
+    position: sticky;
+    top: 68px;
+    z-index: 99;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex: 1;
+    min-width: 60px;
+    padding: 10px 6px 8px;
+    text-align: center;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    font-size: 10px;
+    color: var(--text2);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .tab .tab-icon { font-size: 18px; display: block; margin-bottom: 2px; }
+  .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .tab:hover:not(.active) { color: var(--text); background: var(--dark3); }
+
+  /* PAGES */
+  .page { display: none; padding: 16px; padding-bottom: 20px; }
+  .page.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--dark2);
+    border: 1px solid var(--dark4);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .card-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 1.5px;
+    color: var(--gold);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* INPUTS */
+  input, select {
+    width: 100%;
+    background: var(--dark3);
+    border: 1px solid var(--dark4);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus, select:focus { border-color: var(--green-light); }
+  select option { background: var(--dark3); }
+
+  .input-group { margin-bottom: 10px; }
+  .input-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; letter-spacing: 0.5px; text-transform: uppercase; }
+
+  /* BUTTONS */
+  .btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+    font-family: 'Inter', sans-serif;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-green { background: var(--green); color: white; }
+  .btn-green:hover { background: var(--green-light); }
+  .btn-gold { background: var(--gold); color: var(--dark); }
+  .btn-gold:hover { background: var(--gold-dark); color: white; }
+  .btn-red { background: var(--red); color: white; }
+  .btn-dark { background: var(--dark3); color: var(--text); border: 1px solid var(--dark4); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; width: auto; }
+
+  /* POSITION BADGES */
+  .pos-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+  }
+  .pos-ARQ { background: #f0b42922; color: var(--gold); border: 1px solid var(--gold); }
+  .pos-DEF { background: #4a90d922; color: var(--blue); border: 1px solid var(--blue); }
+  .pos-MED { background: #2d8a4e22; color: #4ec97a; border: 1px solid #4ec97a; }
+  .pos-DEL { background: #e0525222; color: var(--red); border: 1px solid var(--red); }
+
+  /* PLAYER LIST ITEM */
+  .player-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--dark3);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    border: 1px solid var(--dark4);
+  }
+  .player-item .name { font-weight: 600; font-size: 14px; }
+  .player-item .positions { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px; }
+  .player-item .actions { display: flex; gap: 6px; }
+
+  /* CHECKBOX STYLE */
+  .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .checkbox-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--dark3);
+    border: 1px solid var(--dark4);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+  }
+  .checkbox-option.selected-ARQ { border-color: var(--gold); background: #f0b42915; color: var(--gold); }
+  .checkbox-option.selected-DEF { border-color: var(--blue); background: #4a90d915; color: var(--blue); }
+  .checkbox-option.selected-MED { border-color: #4ec97a; background: #4ec97a15; color: #4ec97a; }
+  .checkbox-option.selected-DEL { border-color: var(--red); background: #e0525215; color: var(--red); }
+
+  /* FOOTBALL FIELD */
+  .field-container {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+    position: relative;
+  }
+  .field-svg {
+    width: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  /* PARTIDO PLAYER SELECT */
+  .partido-player {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: var(--dark3);
+    border-radius: 8px;
+    margin-bottom: 5px;
+    border: 1px solid var(--dark4);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .partido-player.enrolled {
+    border-color: var(--green-light);
+    background: #25a05015;
+  }
+  .partido-player .enroll-indicator {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--dark4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+  .partido-player.enrolled .enroll-indicator {
+    background: var(--green);
+    border-color: var(--green);
+    color: white;
+  }
+
+  /* TEAMS DISPLAY */
+  .teams-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .team-card {
+    border-radius: 10px;
+    padding: 12px;
+    border: 2px solid;
+  }
+  .team-a { background: #1a3a5e22; border-color: #4a90d9; }
+  .team-b { background: #3a1a1a22; border-color: #e05252; }
+  .team-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  .team-a .team-name { color: #4a90d9; }
+  .team-b .team-name { color: #e05252; }
+  .team-player-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--dark4);
+    font-size: 12px;
+  }
+  .team-player-row:last-child { border-bottom: none; }
+
+  /* HISTORIAL */
+  .historial-item {
+    background: var(--dark2);
+    border: 1px solid var(--dark4);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .historial-date { font-size: 11px; color: var(--text2); margin-bottom: 8px; }
+  .historial-score {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    text-align: center;
+    letter-spacing: 4px;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .historial-teams { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; }
+  .mvp-badge {
+    background: #f0b42920;
+    border: 1px solid var(--gold);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    color: var(--gold);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  /* LIGA TABLE */
+  .liga-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .liga-table th {
+    padding: 8px 6px;
+    text-align: center;
+    color: var(--text2);
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--dark4);
+  }
+  .liga-table th:first-child { text-align: left; }
+  .liga-table td { padding: 10px 6px; text-align: center; border-bottom: 1px solid var(--dark3); }
+  .liga-table td:first-child { text-align: left; font-weight: 600; }
+  .liga-table tr:last-child td { border-bottom: none; }
+  .liga-table tr:hover td { background: var(--dark3); }
+  .rank-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    color: var(--text2);
+    margin-right: 6px;
+  }
+  .rank-1 { color: var(--gold); }
+  .rank-2 { color: #c0c0c0; }
+  .rank-3 { color: #cd7f32; }
+
+  .pts-cell { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--gold); }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 200;
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--dark2);
+    border-radius: 16px 16px 0 0;
+    padding: 20px 16px 32px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90dvh;
+    overflow-y: auto;
+    border-top: 3px solid var(--green);
+  }
+  .modal-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: var(--gold);
+    margin-bottom: 16px;
+  }
+  .modal-close {
+    float: right;
+    background: none;
+    border: none;
+    color: var(--text2);
+    font-size: 22px;
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  /* VOTE BUTTON */
+  .vote-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: var(--dark3);
+    border: 1px solid var(--dark4);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+  }
+  .vote-btn:hover { border-color: var(--gold); background: #f0b42910; }
+  .vote-btn.voted { border-color: var(--gold); background: #f0b42920; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--dark3);
+    border: 1px solid var(--green);
+    color: var(--text);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    z-index: 300;
+    opacity: 0;
+    transition: all 0.3s;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* DIVIDER */
+  .divider { height: 1px; background: var(--dark4); margin: 12px 0; }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text2);
+  }
+  .empty-state .empty-icon { font-size: 40px; margin-bottom: 8px; }
+  .empty-state p { font-size: 14px; }
+
+  /* STAT BAR */
+  .stat-bar-wrap { margin-bottom: 8px; }
+  .stat-bar-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 3px; }
+  .stat-bar { height: 6px; background: var(--dark4); border-radius: 3px; overflow: hidden; }
+  .stat-bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--green), var(--gold)); transition: width 0.5s; }
+
+  /* SCROLLABLE LIST */
+  .scroll-list { max-height: 300px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--dark4) transparent; }
+
+  /* SHARE CANVAS */
+  #shareCanvas { display: none; }
+
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 14px;
+    letter-spacing: 1.5px;
+    color: var(--text2);
+    margin-bottom: 8px;
+    margin-top: 4px;
+  }
+
+  .badge-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--green);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    margin-left: 6px;
+  }
+
+  .warning-box {
+    background: #f0b42915;
+    border: 1px solid var(--gold);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--gold);
+    margin-bottom: 10px;
+  }
+
+  .info-box {
+    background: #4a90d915;
+    border: 1px solid var(--blue);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--blue);
+    margin-bottom: 10px;
+  }
+
+  .resultado-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .resultado-grid input {
+    text-align: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    padding: 8px;
+  }
+  .resultado-grid .vs {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    color: var(--text2);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <h1>⚽ LOS CRUDOS FC</h1>
+  <p>ORGANIZADOR DE PARTIDOS</p>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('jugadores')">
+    <span class="tab-icon">👥</span>Jugadores
+  </div>
+  <div class="tab" onclick="showTab('partido')">
+    <span class="tab-icon">⚽</span>Partido
+  </div>
+  <div class="tab" onclick="showTab('postpartido')">
+    <span class="tab-icon">🏆</span>Post
+  </div>
+  <div class="tab" onclick="showTab('historial')">
+    <span class="tab-icon">📋</span>Historial
+  </div>
+  <div class="tab" onclick="showTab('liga')">
+    <span class="tab-icon">🥇</span>Liga
+  </div>
+</div>
+
+<!-- ==================== JUGADORES ==================== -->
+<div id="tab-jugadores" class="page active">
+  <div class="card">
+    <div class="card-title">➕ Registrar Jugador</div>
+    <div class="input-group">
+      <div class="input-label">Nombre</div>
+      <input type="text" id="inp-nombre" placeholder="Nombre del jugador" maxlength="30">
+    </div>
+    <div class="input-group">
+      <div class="input-label">Posiciones que juega</div>
+      <div class="checkbox-group" id="pos-checkboxes">
+        <div class="checkbox-option" data-pos="ARQ" onclick="togglePos(this)">🧤 Arquero</div>
+        <div class="checkbox-option" data-pos="DEF" onclick="togglePos(this)">🛡️ Defensor</div>
+        <div class="checkbox-option" data-pos="MED" onclick="togglePos(this)">🔄 Mediocampista</div>
+        <div class="checkbox-option" data-pos="DEL" onclick="togglePos(this)">⚡ Delantero</div>
+      </div>
+    </div>
+    <button class="btn btn-green" onclick="addPlayer()">AGREGAR JUGADOR</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">👥 Jugadores del Grupo <span id="player-count" class="badge-count">0</span></div>
+    <div id="players-list">
+      <div class="empty-state">
+        <div class="empty-icon">👤</div>
+        <p>Todavía no hay jugadores registrados</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PARTIDO ==================== -->
+<div id="tab-partido" class="page">
+
+  <div class="card">
+    <div class="card-title">📅 Partido del Lunes</div>
+    <div id="partido-status-info" class="info-box">Anotá los jugadores que van a jugar hoy. Máximo 16 (8 vs 8).</div>
+    
+    <div class="section-title">JUGADORES ANOTADOS <span id="enrolled-count" class="badge-count">0</span></div>
+    <div id="partido-players-list">
+      <div class="empty-state">
+        <div class="empty-icon">⚽</div>
+        <p>Primero registrá jugadores en la pestaña Jugadores</p>
+      </div>
+    </div>
+    
+    <div style="margin-top:12px; display:flex; gap:8px;">
+      <button class="btn btn-red" style="flex:1" onclick="clearEnrolled()">LIMPIAR</button>
+      <button class="btn btn-gold" style="flex:2" onclick="sortear()">🎲 SORTEAR EQUIPOS</button>
+    </div>
+  </div>
+
+  <div id="sorteo-result" style="display:none">
+    <div class="card">
+      <div class="card-title">⚡ EQUIPOS DEL PARTIDO</div>
+      <div id="arquero-info" class="warning-box" style="display:none"></div>
+      <div class="teams-grid" id="teams-display"></div>
+      <div style="margin-top:14px; display:flex; gap:8px;">
+        <button class="btn btn-dark" style="flex:1" onclick="sortear()">🔀 Re-sortear</button>
+        <button class="btn btn-green" style="flex:2" onclick="generarImagenCancha()">📸 Imagen para WhatsApp</button>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="shareCanvas"></canvas>
+</div>
+
+<!-- ==================== POST PARTIDO ==================== -->
+<div id="tab-postpartido" class="page">
+  <div id="no-partido-msg" class="card">
+    <div class="empty-state">
+      <div class="empty-icon">🏆</div>
+      <p>Primero sorteá los equipos en la pestaña Partido</p>
+    </div>
+  </div>
+
+  <div id="post-partido-content" style="display:none">
+    <div class="card">
+      <div class="card-title">⚽ RESULTADO DEL PARTIDO</div>
+      <div class="resultado-grid">
+        <div>
+          <div style="text-align:center; font-size:11px; color:#4a90d9; margin-bottom:4px; font-weight:700;">EQUIPO AZUL</div>
+          <input type="number" id="goles-a" min="0" max="99" placeholder="0" value="0">
+        </div>
+        <div class="vs">VS</div>
+        <div>
+          <div style="text-align:center; font-size:11px; color:#e05252; margin-bottom:4px; font-weight:700;">EQUIPO ROJO</div>
+          <input type="number" id="goles-b" min="0" max="99" placeholder="0" value="0">
+        </div>
+      </div>
+
+      <div class="input-group">
+        <div class="input-label">Goles individuales (opcional)</div>
+        <div id="goles-individuales-list"></div>
+        <button class="btn btn-dark" style="margin-top:8px" onclick="openGolesModal()">+ Anotar goles por jugador</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⭐ JUGADOR DEL PARTIDO</div>
+      <div id="mvp-info" class="info-box">Cargá el resultado para habilitar la votación del MVP del equipo ganador.</div>
+      <div id="mvp-vote-list"></div>
+      <div id="mvp-selected" style="display:none">
+        <div class="mvp-badge" style="font-size:14px; padding:8px 14px;">⭐ MVP: <span id="mvp-name-display"></span></div>
+      </div>
+    </div>
+
+    <button class="btn btn-gold" style="margin-top:4px" onclick="guardarPartido()">💾 GUARDAR PARTIDO</button>
+  </div>
+</div>
+
+<!-- MODAL GOLES -->
+<div class="modal-overlay" id="goles-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('goles-modal')">✕</button>
+    <div class="modal-title">⚽ GOLES POR JUGADOR</div>
+    <div id="goles-modal-list"></div>
+    <button class="btn btn-green" style="margin-top:12px" onclick="closeModal('goles-modal')">LISTO</button>
+  </div>
+</div>
+
+<!-- ==================== HISTORIAL ==================== -->
+<div id="tab-historial" class="page">
+  <div class="card">
+    <div class="card-title">📊 Estadísticas Generales</div>
+    <div id="stats-overview"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📋 Partidos Jugados</div>
+    <div id="historial-list">
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <p>Todavía no hay partidos guardados</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== LIGA ==================== -->
+<div id="tab-liga" class="page">
+  <div class="card" style="background: linear-gradient(135deg, #1a1a0a, #0d1117); border-color: var(--gold);">
+    <div style="text-align:center; padding: 8px 0 4px;">
+      <div style="font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:4px; color:var(--gold);">🏆 LIGA LOS CRUDOS</div>
+      <div style="font-size:11px; color:var(--text2); letter-spacing:1px;">TEMPORADA 2025</div>
+    </div>
+  </div>
+
+  <div class="card" style="padding: 8px;">
+    <div class="info-box" style="margin-bottom:8px; font-size:11px;">
+      🟢 Victoria = 3 pts &nbsp;|&nbsp; 🟡 Empate = 1 pt &nbsp;|&nbsp; ⭐ MVP = 10 pts extra
+    </div>
+    <div id="liga-table-container">
+      <div class="empty-state">
+        <div class="empty-icon">🏆</div>
+        <p>La liga se forma con los partidos guardados</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⚽ TOP GOLEADORES</div>
+    <div id="top-goleadores">
+      <div class="empty-state" style="padding:20px">
+        <p>No hay goles registrados aún</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">⭐ TOP MVPs</div>
+    <div id="top-mvps">
+      <div class="empty-state" style="padding:20px">
+        <p>No hay MVPs registrados aún</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===================== STATE =====================
+let state = {
+  players: [],       // {id, name, positions[]}
+  enrolled: [],      // [playerId]
+  teams: null,       // {a: [{id,name,positions,pos_assigned}], b: [...]}
+  currentPartido: null, // {teams, golesA, golesB, golesIndividuales{}, mvp}
+  historial: [],     // [{id,date,teamA,teamB,golesA,golesB,golesInd{},mvp,winner}]
+};
+
+// ===================== STORAGE =====================
+function saveState() {
+  try {
+    localStorage.setItem('crudos_state', JSON.stringify(state));
+  } catch(e) {}
+}
+function loadState() {
+  try {
+    const s = localStorage.getItem('crudos_state');
+    if (s) {
+      const parsed = JSON.parse(s);
+      state = { ...state, ...parsed };
+    }
+  } catch(e) {}
+}
+
+// ===================== TABS =====================
+function showTab(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (name === 'partido') renderPartidoPage();
+  if (name === 'postpartido') renderPostPartido();
+  if (name === 'historial') renderHistorial();
+  if (name === 'liga') renderLiga();
+}
+
+// ===================== JUGADORES =====================
+let selectedPositions = [];
+
+function togglePos(el) {
+  const pos = el.dataset.pos;
+  if (selectedPositions.includes(pos)) {
+    selectedPositions = selectedPositions.filter(p => p !== pos);
+    el.className = 'checkbox-option';
+  } else {
+    selectedPositions.push(pos);
+    el.className = 'checkbox-option selected-' + pos;
+  }
+}
+
+function addPlayer() {
+  const name = document.getElementById('inp-nombre').value.trim();
+  if (!name) { showToast('⚠️ Ingresá el nombre del jugador'); return; }
+  if (selectedPositions.length === 0) { showToast('⚠️ Seleccioná al menos una posición'); return; }
+  if (state.players.find(p => p.name.toLowerCase() === name.toLowerCase())) {
+    showToast('⚠️ Ya existe un jugador con ese nombre'); return;
+  }
+  const player = {
+    id: Date.now().toString(),
+    name,
+    positions: [...selectedPositions]
+  };
+  state.players.push(player);
+  saveState();
+  document.getElementById('inp-nombre').value = '';
+  selectedPositions = [];
+  document.querySelectorAll('.checkbox-option').forEach(el => {
+    el.className = 'checkbox-option';
+  });
+  renderPlayersList();
+  showToast('✅ ' + name + ' agregado');
+}
+
+function removePlayer(id) {
+  state.players = state.players.filter(p => p.id !== id);
+  state.enrolled = state.enrolled.filter(e => e !== id);
+  saveState();
+  renderPlayersList();
+  showToast('🗑️ Jugador eliminado');
+}
+
+function renderPlayersList() {
+  const list = document.getElementById('players-list');
+  document.getElementById('player-count').textContent = state.players.length;
+  if (state.players.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">👤</div><p>Todavía no hay jugadores registrados</p></div>';
+    return;
+  }
+  list.innerHTML = state.players.map(p => `
+    <div class="player-item">
+      <div>
+        <div class="name">${p.name}</div>
+        <div class="positions">${p.positions.map(pos => posLabel(pos)).join('')}</div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-red btn-sm" onclick="removePlayer('${p.id}')">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function posLabel(pos) {
+  const labels = { ARQ: '🧤 ARQ', DEF: '🛡️ DEF', MED: '🔄 MED', DEL: '⚡ DEL' };
+  return `<span class="pos-badge pos-${pos}">${labels[pos]}</span>`;
+}
+
+// ===================== PARTIDO =====================
+function renderPartidoPage() {
+  const list = document.getElementById('partido-players-list');
+  const count = document.getElementById('enrolled-count');
+  count.textContent = state.enrolled.length;
+
+  if (state.players.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">⚽</div><p>Primero registrá jugadores en la pestaña Jugadores</p></div>';
+    return;
+  }
+
+  list.innerHTML = state.players.map(p => {
+    const enrolled = state.enrolled.includes(p.id);
+    return `
+      <div class="partido-player ${enrolled ? 'enrolled' : ''}" onclick="toggleEnroll('${p.id}')">
+        <div>
+          <div style="font-weight:600; font-size:14px">${p.name}</div>
+          <div style="display:flex; gap:4px; margin-top:3px">${p.positions.map(pos => posLabel(pos)).join('')}</div>
+        </div>
+        <div class="enroll-indicator">${enrolled ? '✓' : ''}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleEnroll(id) {
+  if (state.enrolled.includes(id)) {
+    state.enrolled = state.enrolled.filter(e => e !== id);
+  } else {
+    if (state.enrolled.length >= 16) {
+      showToast('⚠️ Máximo 16 jugadores (8 vs 8)');
+      return;
+    }
+    state.enrolled.push(id);
+  }
+  saveState();
+  renderPartidoPage();
+}
+
+function clearEnrolled() {
+  state.enrolled = [];
+  state.teams = null;
+  document.getElementById('sorteo-result').style.display = 'none';
+  saveState();
+  renderPartidoPage();
+  showToast('🗑️ Lista limpiada');
+}
+
+function sortear() {
+  const enrolled = state.players.filter(p => state.enrolled.includes(p.id));
+  if (enrolled.length < 2) {
+    showToast('⚠️ Anotá al menos 2 jugadores');
+    return;
+  }
+
+  // Separate by position priority
+  const arqs = enrolled.filter(p => p.positions.includes('ARQ'));
+  const defs = enrolled.filter(p => !p.positions.includes('ARQ') && p.positions.includes('DEF'));
+  const meds = enrolled.filter(p => !p.positions.includes('ARQ') && !p.positions.includes('DEF') && p.positions.includes('MED'));
+  const dels = enrolled.filter(p => !p.positions.includes('ARQ') && !p.positions.includes('DEF') && !p.positions.includes('MED'));
+
+  // Shuffle each group
+  const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
+  const sArqs = shuffle(arqs);
+  const sDefs = shuffle(defs);
+  const sMeds = shuffle(meds);
+  const sDels = shuffle(dels);
+
+  // Build balanced teams
+  const teamA = [], teamB = [];
+
+  const distribute = (group, posName) => {
+    group.forEach((p, i) => {
+      const assigned = { ...p, pos_assigned: posName };
+      if (i % 2 === 0) teamA.push(assigned);
+      else teamB.push(assigned);
+    });
+  };
+
+  distribute(sArqs, 'ARQ');
+  distribute(sDefs, 'DEF');
+  distribute(sMeds, 'MED');
+  distribute(sDels, 'DEL');
+
+  // Final balance shuffle if needed
+  while (Math.abs(teamA.length - teamB.length) > 1) {
+    const bigger = teamA.length > teamB.length ? teamA : teamB;
+    const smaller = teamA.length > teamB.length ? teamB : teamA;
+    const randomIdx = Math.floor(Math.random() * bigger.length);
+    smaller.push(bigger.splice(randomIdx, 1)[0]);
+  }
+
+  state.teams = { a: teamA, b: teamB };
+  state.currentPartido = { teams: state.teams, golesA: 0, golesB: 0, golesInd: {}, mvp: null };
+  saveState();
+
+  renderTeams();
+  document.getElementById('sorteo-result').style.display = 'block';
+  document.getElementById('sorteo-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderTeams() {
+  if (!state.teams) return;
+  const { a, b } = state.teams;
+
+  const hasArqA = a.some(p => p.pos_assigned === 'ARQ');
+  const hasArqB = b.some(p => p.pos_assigned === 'ARQ');
+  const arqInfo = document.getElementById('arquero-info');
+
+  if (!hasArqA || !hasArqB) {
+    arqInfo.style.display = 'block';
+    arqInfo.textContent = '🔄 Sin arquero fijo — se aplica la regla del arquero rotativo (el que recibe el gol sale al campo y entra otro compañero)';
+  } else {
+    arqInfo.style.display = 'none';
+  }
+
+  const posOrder = { ARQ: 0, DEF: 1, MED: 2, DEL: 3 };
+  const sortTeam = team => [...team].sort((x, y) => posOrder[x.pos_assigned] - posOrder[y.pos_assigned]);
+
+  const posEmoji = { ARQ: '🧤', DEF: '🛡️', MED: '🔄', DEL: '⚡' };
+
+  const teamHtml = (team, cls, name) => `
+    <div class="team-card ${cls}">
+      <div class="team-name">${name}</div>
+      ${sortTeam(team).map(p => `
+        <div class="team-player-row">
+          <span>${posEmoji[p.pos_assigned]}</span>
+          <span style="flex:1">${p.name}</span>
+          <span class="pos-badge pos-${p.pos_assigned}" style="font-size:9px">${p.pos_assigned}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  document.getElementById('teams-display').innerHTML =
+    teamHtml(a, 'team-a', '⚡ AZUL') +
+    teamHtml(b, 'team-b', '🔥 ROJO');
+}
+
+// ===================== CANCHA IMAGE =====================
+function generarImagenCancha() {
+  if (!state.teams) return;
+  const canvas = document.getElementById('shareCanvas');
+  const ctx = canvas.getContext('2d');
+
+  const W = 600, H = 900;
+  canvas.width = W;
+  canvas.height = H;
+  canvas.style.display = 'none';
+
+  // Background
+  ctx.fillStyle = '#0d1117';
+  ctx.fillRect(0, 0, W, H);
+
+  // Draw field
+  drawField(ctx, W, H);
+
+  // Header
+  ctx.fillStyle = '#f0b429';
+  ctx.font = 'bold 36px Bebas Neue, Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('⚽ LOS CRUDOS FC', W/2, 38);
+  ctx.fillStyle = '#8b949e';
+  ctx.font = '14px Inter, Arial';
+  const fechaHoy = new Date().toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'long' });
+  ctx.fillText(fechaHoy.toUpperCase(), W/2, 56);
+
+  // Place players
+  placePlayersOnField(ctx, state.teams.a, state.teams.b, W, H);
+
+  // Legend
+  ctx.fillStyle = '#4a90d9';
+  ctx.font = 'bold 18px Bebas Neue, Arial';
+  ctx.textAlign = 'left';
+  ctx.fillText('EQUIPO AZUL', 20, H - 30);
+  ctx.fillStyle = '#e05252';
+  ctx.textAlign = 'right';
+  ctx.fillText('EQUIPO ROJO', W-20, H - 30);
+
+  // Show and offer download
+  canvas.style.display = 'block';
+  const dataURL = canvas.toDataURL('image/png');
+
+  // Create download link
+  const a = document.createElement('a');
+  a.href = dataURL;
+  a.download = 'crudos_partido_' + new Date().toLocaleDateString('es-AR').replace(/\//g,'-') + '.png';
+  a.click();
+
+  canvas.style.display = 'none';
+  showToast('📸 Imagen descargada — compartila en WhatsApp!');
+}
+
+function drawField(ctx, W, H) {
+  const FX = 20, FY = 65, FW = W-40, FH = H-90;
+
+  // Field green
+  ctx.fillStyle = '#1a6b35';
+  ctx.beginPath();
+  ctx.roundRect(FX, FY, FW, FH, 8);
+  ctx.fill();
+
+  // Stripes
+  const stripeH = FH / 8;
+  for (let i = 0; i < 8; i++) {
+    if (i % 2 === 0) {
+      ctx.fillStyle = 'rgba(0,0,0,0.08)';
+      ctx.fillRect(FX, FY + i*stripeH, FW, stripeH);
+    }
+  }
+
+  // Lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+  ctx.lineWidth = 2;
+
+  // Border
+  ctx.strokeRect(FX, FY, FW, FH);
+
+  // Center line
+  ctx.beginPath();
+  ctx.moveTo(FX, FY + FH/2);
+  ctx.lineTo(FX + FW, FY + FH/2);
+  ctx.stroke();
+
+  // Center circle
+  ctx.beginPath();
+  ctx.arc(FX + FW/2, FY + FH/2, 40, 0, Math.PI*2);
+  ctx.stroke();
+
+  // Center dot
+  ctx.fillStyle = 'white';
+  ctx.beginPath();
+  ctx.arc(FX + FW/2, FY + FH/2, 4, 0, Math.PI*2);
+  ctx.fill();
+
+  // Penalty areas
+  const paW = FW * 0.5, paH = 70;
+  ctx.strokeRect(FX + (FW-paW)/2, FY, paW, paH);
+  ctx.strokeRect(FX + (FW-paW)/2, FY + FH - paH, paW, paH);
+
+  // Goal areas
+  const gaW = FW * 0.28, gaH = 28;
+  ctx.strokeRect(FX + (FW-gaW)/2, FY, gaW, gaH);
+  ctx.strokeRect(FX + (FW-gaW)/2, FY + FH - gaH, gaW, gaH);
+}
+
+function placePlayersOnField(ctx, teamA, teamB, W, H) {
+  const FX = 20, FY = 65, FW = W-40, FH = H-90;
+
+  // Position zones (y percentage from top of field)
+  // teamA plays bottom half, teamB top half
+  const posZones = {
+    ARQ: 0.92,
+    DEF: 0.76,
+    MED: 0.58,
+    DEL: 0.40
+  };
+  const posZonesB = {
+    ARQ: 0.08,
+    DEF: 0.24,
+    MED: 0.42,
+    DEL: 0.60
+  };
+
+  const drawPlayers = (team, zones, color, shadowColor) => {
+    const byPos = {};
+    team.forEach(p => {
+      if (!byPos[p.pos_assigned]) byPos[p.pos_assigned] = [];
+      byPos[p.pos_assigned].push(p);
+    });
+
+    Object.entries(byPos).forEach(([pos, players]) => {
+      const yPct = zones[pos] || 0.5;
+      const y = FY + FH * yPct;
+      const n = players.length;
+      players.forEach((p, i) => {
+        let x;
+        if (n === 1) x = FX + FW/2;
+        else x = FX + FW * ((i+1)/(n+1));
+
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.beginPath();
+        ctx.ellipse(x+2, y+2, 22, 22, 0, 0, Math.PI*2);
+        ctx.fill();
+
+        // Circle
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(x, y, 22, 0, Math.PI*2);
+        ctx.fill();
+
+        // Border
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Initials
+        const initials = p.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 14px Inter, Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(initials, x, y);
+
+        // Name below
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 10px Inter, Arial';
+        ctx.textBaseline = 'top';
+        const firstName = p.name.split(' ')[0];
+        const dispName = firstName.length > 8 ? firstName.slice(0,7)+'.' : firstName;
+        
+        // Name bg
+        const tw = ctx.measureText(dispName).width + 6;
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.beginPath();
+        ctx.roundRect(x - tw/2, y+25, tw, 14, 3);
+        ctx.fill();
+        
+        ctx.fillStyle = 'white';
+        ctx.fillText(dispName, x, y+26);
+        ctx.textBaseline = 'alphabetic';
+      });
+    });
+  };
+
+  drawPlayers(teamA, posZones, '#2d5fa8', '#1a3a6e');
+  drawPlayers(teamB, posZonesB, '#a82d2d', '#6e1a1a');
+}
+
+// ===================== POST PARTIDO =====================
+function renderPostPartido() {
+  const hasSorteo = state.teams !== null;
+  document.getElementById('no-partido-msg').style.display = hasSorteo ? 'none' : 'block';
+  document.getElementById('post-partido-content').style.display = hasSorteo ? 'block' : 'none';
+
+  if (!hasSorteo) return;
+
+  // Goles individuales list (all players from both teams)
+  renderGolesIndividuales();
+  renderMvpSection();
+}
+
+function renderGolesIndividuales() {
+  if (!state.teams) return;
+  const allPlayers = [...(state.teams.a || []), ...(state.teams.b || [])];
+  const golesInd = state.currentPartido?.golesInd || {};
+  const list = document.getElementById('goles-individuales-list');
+  const hasGoles = Object.keys(golesInd).some(k => golesInd[k] > 0);
+  if (!hasGoles) {
+    list.innerHTML = '<div style="color:var(--text2); font-size:12px">Sin goles anotados todavía</div>';
+  } else {
+    list.innerHTML = allPlayers.filter(p => golesInd[p.id] > 0).map(p => `
+      <div style="display:flex; justify-content:space-between; padding:4px 0; font-size:13px; border-bottom:1px solid var(--dark4)">
+        <span>${p.name}</span>
+        <span style="color:var(--gold); font-weight:700">${golesInd[p.id]} ⚽</span>
+      </div>
+    `).join('');
+  }
+}
+
+function openGolesModal() {
+  if (!state.teams) return;
+  const allPlayers = [...(state.teams.a || []), ...(state.teams.b || [])];
+  const golesInd = state.currentPartido?.golesInd || {};
+  if (!state.currentPartido) state.currentPartido = { teams: state.teams, golesA: 0, golesB: 0, golesInd: {}, mvp: null };
+
+  document.getElementById('goles-modal-list').innerHTML = allPlayers.map(p => {
+    const goles = golesInd[p.id] || 0;
+    const teamColor = state.teams.a.find(x => x.id === p.id) ? '#4a90d9' : '#e05252';
+    return `
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--dark4)">
+        <div>
+          <span style="font-weight:600">${p.name}</span>
+          <span style="display:inline-block; width:8px; height:8px; background:${teamColor}; border-radius:50%; margin-left:6px"></span>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px">
+          <button class="btn btn-dark btn-sm" onclick="changeGoles('${p.id}',-1)" style="width:32px;height:32px;padding:0;font-size:18px">−</button>
+          <span id="goles-${p.id}" style="font-family:'Bebas Neue',sans-serif; font-size:22px; color:var(--gold); min-width:24px; text-align:center">${goles}</span>
+          <button class="btn btn-green btn-sm" onclick="changeGoles('${p.id}',1)" style="width:32px;height:32px;padding:0;font-size:18px">+</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('goles-modal').classList.add('open');
+}
+
+function changeGoles(playerId, delta) {
+  if (!state.currentPartido) return;
+  const current = state.currentPartido.golesInd[playerId] || 0;
+  const newVal = Math.max(0, current + delta);
+  state.currentPartido.golesInd[playerId] = newVal;
+  document.getElementById('goles-' + playerId).textContent = newVal;
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  renderGolesIndividuales();
+}
+
+function renderMvpSection() {
+  const golesA = parseInt(document.getElementById('goles-a')?.value) || 0;
+  const golesB = parseInt(document.getElementById('goles-b')?.value) || 0;
+  const mvpInfo = document.getElementById('mvp-info');
+  const mvpList = document.getElementById('mvp-vote-list');
+  const mvpSelected = document.getElementById('mvp-selected');
+
+  if (golesA === golesB) {
+    mvpInfo.style.display = 'block';
+    mvpInfo.textContent = 'Es un empate — el MVP puede ser de cualquier equipo.';
+    mvpList.innerHTML = renderMvpOptions([...state.teams.a, ...state.teams.b]);
+  } else {
+    const winnerTeam = golesA > golesB ? state.teams.a : state.teams.b;
+    const winnerName = golesA > golesB ? 'Azul' : 'Rojo';
+    mvpInfo.style.display = 'block';
+    mvpInfo.textContent = `⚽ Ganó Equipo ${winnerName} ${Math.max(golesA,golesB)}-${Math.min(golesA,golesB)} — votá el MVP del equipo ganador:`;
+    mvpList.innerHTML = renderMvpOptions(winnerTeam);
+  }
+
+  if (state.currentPartido?.mvp) {
+    mvpSelected.style.display = 'block';
+    document.getElementById('mvp-name-display').textContent = state.currentPartido.mvp.name;
+  } else {
+    mvpSelected.style.display = 'none';
+  }
+}
+
+function renderMvpOptions(players) {
+  return players.map(p => {
+    const isMvp = state.currentPartido?.mvp?.id === p.id;
+    return `
+      <button class="vote-btn ${isMvp ? 'voted' : ''}" onclick="selectMvp('${p.id}')">
+        <span style="font-weight:600">${p.name}</span>
+        <span>${isMvp ? '⭐ MVP' : '⭐'}</span>
+      </button>
+    `;
+  }).join('');
+}
+
+function selectMvp(playerId) {
+  if (!state.teams) return;
+  const all = [...state.teams.a, ...state.teams.b];
+  const player = all.find(p => p.id === playerId);
+  if (!state.currentPartido) state.currentPartido = { teams: state.teams, golesA: 0, golesB: 0, golesInd: {}, mvp: null };
+  state.currentPartido.mvp = player;
+  renderMvpSection();
+  showToast('⭐ ' + player.name + ' seleccionado como MVP');
+}
+
+// Wire up score inputs to refresh MVP
+document.addEventListener('DOMContentLoaded', () => {
+  ['goles-a','goles-b'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', renderMvpSection);
+  });
+});
+
+function guardarPartido() {
+  if (!state.teams) { showToast('⚠️ Primero sorteá los equipos'); return; }
+
+  const golesA = parseInt(document.getElementById('goles-a').value) || 0;
+  const golesB = parseInt(document.getElementById('goles-b').value) || 0;
+  let winner = null;
+  if (golesA > golesB) winner = 'A';
+  else if (golesB > golesA) winner = 'B';
+  else winner = 'empate';
+
+  const partido = {
+    id: Date.now().toString(),
+    date: new Date().toISOString(),
+    teamA: state.teams.a.map(p => ({ id: p.id, name: p.name, pos: p.pos_assigned })),
+    teamB: state.teams.b.map(p => ({ id: p.id, name: p.name, pos: p.pos_assigned })),
+    golesA,
+    golesB,
+    golesInd: state.currentPartido?.golesInd || {},
+    mvp: state.currentPartido?.mvp ? { id: state.currentPartido.mvp.id, name: state.currentPartido.mvp.name } : null,
+    winner
+  };
+
+  state.historial.unshift(partido);
+  state.teams = null;
+  state.enrolled = [];
+  state.currentPartido = null;
+  saveState();
+  showToast('💾 Partido guardado!');
+  showTab2('historial');
+}
+
+function showTab2(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t => {
+    if (t.getAttribute('onclick') && t.getAttribute('onclick').includes(name)) {
+      t.classList.add('active');
+    }
+  });
+  if (name === 'historial') renderHistorial();
+  if (name === 'liga') renderLiga();
+}
+
+// ===================== HISTORIAL =====================
+function renderHistorial() {
+  renderStatsOverview();
+  const list = document.getElementById('historial-list');
+  if (state.historial.length === 0) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>Todavía no hay partidos guardados</p></div>';
+    return;
+  }
+
+  list.innerHTML = state.historial.map(p => {
+    const date = new Date(p.date).toLocaleDateString('es-AR', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+    const winnerLabel = p.winner === 'empate' ? '🤝 Empate' : p.winner === 'A' ? '⚡ Ganó Azul' : '🔥 Ganó Rojo';
+    const mvpHtml = p.mvp ? `<div class="mvp-badge">⭐ MVP: ${p.mvp.name}</div>` : '';
+    return `
+      <div class="historial-item">
+        <div class="historial-date">📅 ${date}</div>
+        <div class="historial-score">${p.golesA} — ${p.golesB}</div>
+        <div class="historial-teams">
+          <div style="color:#4a90d9; font-weight:600">⚡ Azul: ${p.teamA.map(x=>x.name).join(', ')}</div>
+        </div>
+        <div class="historial-teams">
+          <div style="color:#e05252; font-weight:600">🔥 Rojo: ${p.teamB.map(x=>x.name).join(', ')}</div>
+        </div>
+        <div style="text-align:center; margin:6px 0; font-size:13px; color:var(--gold)">${winnerLabel}</div>
+        ${mvpHtml}
+        <div style="margin-top:8px; display:flex; gap:6px">
+          <button class="btn btn-dark btn-sm" onclick="deletePartido('${p.id}')">🗑️ Borrar</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function deletePartido(id) {
+  state.historial = state.historial.filter(p => p.id !== id);
+  saveState();
+  renderHistorial();
+  renderLiga();
+  showToast('🗑️ Partido eliminado');
+}
+
+function renderStatsOverview() {
+  const overview = document.getElementById('stats-overview');
+  if (state.historial.length === 0) {
+    overview.innerHTML = '<div style="color:var(--text2); font-size:13px; text-align:center; padding:10px 0">Sin partidos jugados aún</div>';
+    return;
+  }
+
+  const total = state.historial.length;
+  // Goleador stats
+  const goleadores = {};
+  state.historial.forEach(p => {
+    Object.entries(p.golesInd).forEach(([pid, g]) => {
+      if (g > 0) {
+        const player = state.players.find(x => x.id === pid);
+        if (!goleadores[pid]) goleadores[pid] = { name: player?.name || 'Desconocido', goles: 0 };
+        goleadores[pid].goles += g;
+      }
+    });
+  });
+  const topGol = Object.values(goleadores).sort((a,b) => b.goles - a.goles)[0];
+
+  // MVP stats
+  const mvps = {};
+  state.historial.forEach(p => {
+    if (p.mvp) {
+      if (!mvps[p.mvp.id]) mvps[p.mvp.id] = { name: p.mvp.name, count: 0 };
+      mvps[p.mvp.id].count++;
+    }
+  });
+  const topMvp = Object.values(mvps).sort((a,b) => b.count - a.count)[0];
+
+  overview.innerHTML = `
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+      <div style="text-align:center; padding:10px; background:var(--dark3); border-radius:8px">
+        <div style="font-family:'Bebas Neue',sans-serif; font-size:32px; color:var(--gold)">${total}</div>
+        <div style="font-size:11px; color:var(--text2)">PARTIDOS JUGADOS</div>
+      </div>
+      <div style="text-align:center; padding:10px; background:var(--dark3); border-radius:8px">
+        <div style="font-family:'Bebas Neue',sans-serif; font-size:32px; color:var(--green-light)">${state.players.length}</div>
+        <div style="font-size:11px; color:var(--text2)">JUGADORES</div>
+      </div>
+    </div>
+    ${topGol ? `
+    <div style="margin-top:8px; padding:10px; background:var(--dark3); border-radius:8px; display:flex; align-items:center; justify-content:space-between">
+      <div style="font-size:12px; color:var(--text2)">⚽ Top Goleador</div>
+      <div style="font-weight:700">${topGol.name} — <span style="color:var(--gold)">${topGol.goles} goles</span></div>
+    </div>` : ''}
+    ${topMvp ? `
+    <div style="margin-top:6px; padding:10px; background:var(--dark3); border-radius:8px; display:flex; align-items:center; justify-content:space-between">
+      <div style="font-size:12px; color:var(--text2)">⭐ Más MVPs</div>
+      <div style="font-weight:700">${topMvp.name} — <span style="color:var(--gold)">${topMvp.count}x MVP</span></div>
+    </div>` : ''}
+  `;
+}
+
+// ===================== LIGA =====================
+function renderLiga() {
+  renderLigaTable();
+  renderTopGoleadores();
+  renderTopMvps();
+}
+
+function buildLigaStats() {
+  const stats = {};
+
+  state.historial.forEach(partido => {
+    const allInPartido = [...partido.teamA, ...partido.teamB];
+
+    allInPartido.forEach(p => {
+      if (!stats[p.id]) {
+        stats[p.id] = { id: p.id, name: p.name, pj: 0, pg: 0, pe: 0, pp: 0, pts: 0, mvp: 0, goles: 0 };
+      }
+    });
+
+    // Points
+    partido.teamA.forEach(p => {
+      stats[p.id].pj++;
+      if (partido.winner === 'A') { stats[p.id].pg++; stats[p.id].pts += 3; }
+      else if (partido.winner === 'empate') { stats[p.id].pe++; stats[p.id].pts += 1; }
+      else stats[p.id].pp++;
+    });
+
+    partido.teamB.forEach(p => {
+      stats[p.id].pj++;
+      if (partido.winner === 'B') { stats[p.id].pg++; stats[p.id].pts += 3; }
+      else if (partido.winner === 'empate') { stats[p.id].pe++; stats[p.id].pts += 1; }
+      else stats[p.id].pp++;
+    });
+
+    // MVP bonus
+    if (partido.mvp) {
+      if (stats[partido.mvp.id]) {
+        stats[partido.mvp.id].mvp++;
+        stats[partido.mvp.id].pts += 10;
+      }
+    }
+
+    // Goals
+    Object.entries(partido.golesInd).forEach(([pid, g]) => {
+      if (stats[pid]) stats[pid].goles += g;
+    });
+  });
+
+  return Object.values(stats).sort((a, b) => {
+    if (b.pts !== a.pts) return b.pts - a.pts;
+    if (b.pg !== a.pg) return b.pg - a.pg;
+    return b.goles - a.goles;
+  });
+}
+
+function renderLigaTable() {
+  const container = document.getElementById('liga-table-container');
+  const statsArr = buildLigaStats();
+
+  if (statsArr.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">🏆</div><p>La liga se forma con los partidos guardados</p></div>';
+    return;
+  }
+
+  container.innerHTML = `
+    <table class="liga-table">
+      <thead>
+        <tr>
+          <th style="text-align:left">#  Jugador</th>
+          <th>PJ</th>
+          <th>PG</th>
+          <th>PE</th>
+          <th>PP</th>
+          <th>⭐</th>
+          <th>PTS</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${statsArr.map((s, i) => {
+          const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
+          const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+          return `
+          <tr>
+            <td>
+              <span class="rank-num ${rankClass}">${medal || (i+1)}</span>
+              ${s.name}
+            </td>
+            <td>${s.pj}</td>
+            <td style="color:#4ec97a; font-weight:600">${s.pg}</td>
+            <td style="color:var(--gold)">${s.pe}</td>
+            <td style="color:var(--red)">${s.pp}</td>
+            <td>${s.mvp > 0 ? '⭐'.repeat(Math.min(s.mvp, 3)) + (s.mvp > 3 ? 'x'+s.mvp : '') : '—'}</td>
+            <td class="pts-cell">${s.pts}</td>
+          </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderTopGoleadores() {
+  const stats = buildLigaStats().filter(s => s.goles > 0).sort((a,b) => b.goles - a.goles);
+  const el = document.getElementById('top-goleadores');
+  if (stats.length === 0) {
+    el.innerHTML = '<div class="empty-state" style="padding:20px"><p>No hay goles registrados aún</p></div>';
+    return;
+  }
+  const max = stats[0].goles;
+  el.innerHTML = stats.slice(0,10).map((s,i) => `
+    <div class="stat-bar-wrap">
+      <div class="stat-bar-label">
+        <span>${i===0?'🥇':i===1?'🥈':i===2?'🥉':'  '} ${s.name}</span>
+        <span style="color:var(--gold); font-weight:700">${s.goles} ⚽</span>
+      </div>
+      <div class="stat-bar">
+        <div class="stat-bar-fill" style="width:${(s.goles/max*100)}%"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderTopMvps() {
+  const stats = buildLigaStats().filter(s => s.mvp > 0).sort((a,b) => b.mvp - a.mvp);
+  const el = document.getElementById('top-mvps');
+  if (stats.length === 0) {
+    el.innerHTML = '<div class="empty-state" style="padding:20px"><p>No hay MVPs registrados aún</p></div>';
+    return;
+  }
+  const max = stats[0].mvp;
+  el.innerHTML = stats.map((s,i) => `
+    <div class="stat-bar-wrap">
+      <div class="stat-bar-label">
+        <span>${i===0?'🥇':i===1?'🥈':i===2?'🥉':'  '} ${s.name}</span>
+        <span style="color:var(--gold); font-weight:700">${s.mvp}x ⭐</span>
+      </div>
+      <div class="stat-bar">
+        <div class="stat-bar-fill" style="width:${(s.mvp/max*100)}%; background:linear-gradient(90deg,#c8901a,#f0b429)"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ===================== TOAST =====================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ===================== INIT =====================
+loadState();
+renderPlayersList();
+renderPartidoPage();
+
+// Watch score changes for MVP section
+setTimeout(() => {
+  ['goles-a','goles-b'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', renderMvpSection);
+  });
+}, 100);
+</script>
+</body>
+</html>

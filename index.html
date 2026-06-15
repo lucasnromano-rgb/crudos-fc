@@ -97,10 +97,10 @@ input:focus{border-color:var(--gl);}
 
 .teams-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
 .tc{border-radius:10px;padding:12px;border:2px solid;}
-.ta{background:#1a3a5e18;border-color:var(--blue);}
-.tb{background:#3a1a1a18;border-color:var(--red);}
+.ta{background:#3d2000;border-color:#ff8c00;}
+.tb{background:#3d3000;border-color:#ffd700;}
 .tname{font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:2px;text-align:center;margin-bottom:8px;}
-.ta .tname{color:var(--blue);} .tb .tname{color:var(--red);}
+.ta .tname{color:#ff8c00;} .tb .tname{color:#ffd700;}
 .tprow{display:flex;align-items:center;gap:5px;padding:4px 0;border-bottom:1px solid var(--d4);font-size:12px;}
 .tprow:last-child{border-bottom:none;}
 
@@ -273,12 +273,12 @@ canvas{display:none;}
           <div class="ctitle">&#x26BD; RESULTADO</div>
           <div class="score-grid">
             <div>
-              <div style="text-align:center;font-size:11px;color:var(--blue);font-weight:700;margin-bottom:4px">EQUIPO AZUL</div>
+              <div style="text-align:center;font-size:11px;color:#ff8c00;font-weight:700;margin-bottom:4px">EQUIPO NARANJA</div>
               <input type="number" id="g-a" min="0" max="99" value="0" oninput="refreshMvp()">
             </div>
             <div class="vs">VS</div>
             <div>
-              <div style="text-align:center;font-size:11px;color:var(--red);font-weight:700;margin-bottom:4px">EQUIPO ROJO</div>
+              <div style="text-align:center;font-size:11px;color:#ffd700;font-weight:700;margin-bottom:4px">EQUIPO AMARILLO</div>
               <input type="number" id="g-b" min="0" max="99" value="0" oninput="refreshMvp()">
             </div>
           </div>
@@ -483,19 +483,74 @@ function clearEnrolled(){
 function sortear(){
   var ep=players.filter(function(p){return enrolled.has(String(p.id));});
   if(ep.length<2){toast('Anota al menos 2 jugadores');return;}
-  var arqs=ep.filter(function(p){return p.positions.indexOf('ARQ')>=0;});
-  var defs=ep.filter(function(p){return p.positions.indexOf('ARQ')<0&&p.positions.indexOf('DEF')>=0;});
-  var meds=ep.filter(function(p){return p.positions.indexOf('ARQ')<0&&p.positions.indexOf('DEF')<0&&p.positions.indexOf('MED')>=0;});
-  var dels=ep.filter(function(p){return p.positions.indexOf('ARQ')<0&&p.positions.indexOf('DEF')<0&&p.positions.indexOf('MED')<0;});
+
+  // Smart balanced draw:
+  // 1. Separate true dedicated ARQs (only ARQ) first
+  // 2. Then assign best position to balance teams
   function sh(a){return a.slice().sort(function(){return Math.random()-.5;});}
+
   var A=[],B=[];
-  [[arqs,'ARQ'],[defs,'DEF'],[meds,'MED'],[dels,'DEL']].forEach(function(gp){
-    sh(gp[0]).forEach(function(p,i){(i%2===0?A:B).push(Object.assign({},p,{pa:gp[1]}));});
+  var shuffled = sh(ep);
+
+  // Count how many of each position we'll need across both teams
+  // Goal: each team gets ~equal distribution of each pos
+  var posCount = {ARQ:0,DEF:0,MED:0,DEL:0};
+
+  // First pass: count available positions (each player counts once per pos)
+  shuffled.forEach(function(p){
+    p.positions.forEach(function(pos){ posCount[pos]++; });
   });
-  while(Math.abs(A.length-B.length)>1){
-    var big=A.length>B.length?A:B,sm=A.length>B.length?B:A;
-    sm.push(big.splice(Math.floor(Math.random()*big.length),1)[0]);
-  }
+
+  // Decide how many ARQ we want: ideally 1 per team if available
+  var wantArq = Math.min(2, posCount['ARQ']);
+
+  // Assign ARQ slots first to players who have ARQ
+  var arqPlayers = sh(shuffled.filter(function(p){ return p.positions.indexOf('ARQ')>=0; }));
+  var assigned = {};
+
+  arqPlayers.slice(0, wantArq).forEach(function(p, i){
+    var team = i%2===0 ? A : B;
+    team.push(Object.assign({},p,{pa:'ARQ'}));
+    assigned[p.id] = true;
+  });
+
+  // Remaining players (not yet assigned)
+  var remaining = sh(shuffled.filter(function(p){ return !assigned[p.id]; }));
+
+  // For remaining, assign best available position to keep teams balanced
+  // Track pos counts per team
+  var cntA={ARQ:0,DEF:0,MED:0,DEL:0}, cntB={ARQ:0,DEF:0,MED:0,DEL:0};
+  A.forEach(function(p){ cntA[p.pa]++; });
+  B.forEach(function(p){ cntB[p.pa]++; });
+
+  var posOrder = ['DEF','MED','DEL','ARQ']; // priority for non-arq assignment
+
+  remaining.forEach(function(p){
+    // Pick team that needs this player more (smaller size)
+    // Within that team, pick best position to fill gaps
+    var teamA_needs = posOrder.filter(function(pos){ return p.positions.indexOf(pos)>=0; })
+                              .sort(function(a,b){ return cntA[a]-cntA[b]; });
+    var teamB_needs = posOrder.filter(function(pos){ return p.positions.indexOf(pos)>=0; })
+                              .sort(function(a,b){ return cntB[a]-cntB[b]; });
+
+    var bestPosA = teamA_needs[0] || p.positions[0];
+    var bestPosB = teamB_needs[0] || p.positions[0];
+
+    // Choose team: prefer smaller team, tie-break by which assignment fills gap better
+    var goToA;
+    if(A.length < B.length) goToA = true;
+    else if(B.length < A.length) goToA = false;
+    else goToA = cntA[bestPosA] <= cntB[bestPosB];
+
+    if(goToA){
+      A.push(Object.assign({},p,{pa:bestPosA}));
+      cntA[bestPosA]++;
+    } else {
+      B.push(Object.assign({},p,{pa:bestPosB}));
+      cntB[bestPosB]++;
+    }
+  });
+
   currentTeams={a:A,b:B};golesInd={};currentMvp=null;
   localStorage.setItem('c_teams',JSON.stringify(currentTeams));
   renderTeams();
@@ -516,25 +571,67 @@ function renderTeams(){
     return '<div class="tc '+cls+'"><div class="tname">'+nm+'</div>'
       +st(team).map(function(p){return '<div class="tprow"><span>'+pe[p.pa]+'</span><span style="flex:1">'+p.name+'</span><span class="pb p'+p.pa+'" style="font-size:9px">'+p.pa+'</span></div>';}).join('')+'</div>';
   }
-  document.getElementById('teams-disp').innerHTML=th(a,'ta','⚡ AZUL')+th(b,'tb','🔥 ROJO');
+  document.getElementById('teams-disp').innerHTML=th(a,'ta','🟠 NARANJA')+th(b,'tb','🟡 AMARILLO');
 }
 
 // ---- CANVAS ----
 function genImg(){
   if(!currentTeams)return;
-  var cvs=document.getElementById('cvs'),ctx=cvs.getContext('2d'),W=600,H=900;
+  var cvs=document.getElementById('cvs'),ctx=cvs.getContext('2d'),W=600,H=1000;
   cvs.width=W;cvs.height=H;
-  ctx.fillStyle='#0d1117';ctx.fillRect(0,0,W,H);
-  drawField(ctx,W,H);
-  ctx.fillStyle='#f0b429';ctx.font='bold 32px Arial';ctx.textAlign='center';ctx.fillText('LOS CRUDOS FC',W/2,36);
-  ctx.fillStyle='#8b949e';ctx.font='13px Arial';ctx.fillText(new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'}).toUpperCase(),W/2,53);
-  placePlayers(ctx,currentTeams.a,currentTeams.b,W,H);
-  ctx.fillStyle='#4a90d9';ctx.font='bold 15px Arial';ctx.textAlign='left';ctx.fillText('EQUIPO AZUL',20,H-18);
-  ctx.fillStyle='#e05252';ctx.textAlign='right';ctx.fillText('EQUIPO ROJO',W-20,H-18);
-  var url=cvs.toDataURL('image/png');
-  var a=document.createElement('a');a.href=url;a.download='crudos_'+new Date().toLocaleDateString('es-AR').replace(/[/]/g,'-')+'.png';a.click();
-  toast('Imagen descargada!');
+
+  // Draw padrino background image
+  var img=new Image();
+  img.onload=function(){
+    // Dark overlay over padrino
+    ctx.drawImage(img,0,0,W,H);
+    ctx.fillStyle='rgba(0,0,0,0.72)';
+    ctx.fillRect(0,0,W,H);
+
+    // Header
+    ctx.fillStyle='#f0b429';
+    ctx.font='bold 38px Arial';
+    ctx.textAlign='center';
+    ctx.fillText('LOS CRUDOS FC',W/2,44);
+    ctx.fillStyle='#aaa';
+    ctx.font='14px Arial';
+    ctx.fillText(new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'}).toUpperCase(),W/2,64);
+
+    // Draw field on top half
+    drawField(ctx,W,H);
+
+    // Place players
+    placePlayers(ctx,currentTeams.a,currentTeams.b,W,H);
+
+    // Team labels bottom
+    ctx.fillStyle='#ff8c00';
+    ctx.font='bold 18px Arial';
+    ctx.textAlign='left';
+    ctx.fillText('EQUIPO NARANJA',20,H-16);
+    ctx.fillStyle='#ffd700';
+    ctx.textAlign='right';
+    ctx.fillText('EQUIPO AMARILLO',W-20,H-16);
+
+    var url=cvs.toDataURL('image/png');
+    var a=document.createElement('a');
+    a.href=url;
+    a.download='crudos_'+new Date().toLocaleDateString('es-AR').replace(/[/]/g,'-')+'.png';
+    a.click();
+    toast('Imagen descargada!');
+  };
+  img.onerror=function(){
+    // fallback sin imagen
+    ctx.fillStyle='#0d1117';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#f0b429';ctx.font='bold 38px Arial';ctx.textAlign='center';ctx.fillText('LOS CRUDOS FC',W/2,44);
+    drawField(ctx,W,H);
+    placePlayers(ctx,currentTeams.a,currentTeams.b,W,H);
+    var url=cvs.toDataURL('image/png');
+    var a=document.createElement('a');a.href=url;a.download='crudos.png';a.click();
+    toast('Imagen descargada!');
+  };
+  img.src=IMG_PADRINO;
 }
+
 function drawField(ctx,W,H){
   var FX=20,FY=62,FW=W-40,FH=H-82;
   ctx.fillStyle='#1a6b35';ctx.beginPath();ctx.roundRect(FX,FY,FW,FH,8);ctx.fill();
@@ -548,28 +645,62 @@ function drawField(ctx,W,H){
   ctx.strokeRect(FX+(FW-pW)/2,FY,pW,pH);ctx.strokeRect(FX+(FW-pW)/2,FY+FH-pH,pW,pH);
 }
 function placePlayers(ctx,tA,tB,W,H){
-  var FX=20,FY=62,FW=W-40,FH=H-82;
-  var zA={ARQ:.91,DEF:.75,MED:.57,DEL:.40},zB={ARQ:.09,DEF:.25,MED:.43,DEL:.60};
-  function drawT(team,z,col){
+  var FX=20,FY=72,FW=W-40,FH=H-100;
+  var zA={ARQ:.91,DEF:.75,MED:.57,DEL:.40};
+  var zB={ARQ:.09,DEF:.25,MED:.43,DEL:.60};
+  var posLabel={ARQ:'ARQ',DEF:'DEF',MED:'MED',DEL:'DEL'};
+  var posColor={ARQ:'#f0b429',DEF:'#4a90d9',MED:'#4ec97a',DEL:'#e05252'};
+
+  function drawT(team,z,circleCol){
     var bp={};
     team.forEach(function(p){if(!bp[p.pa])bp[p.pa]=[];bp[p.pa].push(p);});
     Object.keys(bp).forEach(function(pos){
       var ps=bp[pos],y=FY+FH*(z[pos]||.5);
       ps.forEach(function(p,i){
         var x=ps.length===1?FX+FW/2:FX+FW*((i+1)/(ps.length+1));
-        ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.arc(x+2,y+2,21,0,Math.PI*2);ctx.fill();
-        ctx.fillStyle=col;ctx.beginPath();ctx.arc(x,y,21,0,Math.PI*2);ctx.fill();
-        ctx.strokeStyle='white';ctx.lineWidth=2;ctx.stroke();
+        var R=26;
+
+        // Shadow
+        ctx.fillStyle='rgba(0,0,0,0.45)';
+        ctx.beginPath();ctx.arc(x+3,y+3,R,0,Math.PI*2);ctx.fill();
+
+        // Circle
+        ctx.fillStyle=circleCol;
+        ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.fill();
+        ctx.strokeStyle='white';ctx.lineWidth=2.5;ctx.stroke();
+
+        // Initials
         var ini=p.name.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
-        ctx.fillStyle='white';ctx.font='bold 13px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(ini,x,y);
-        var fn=p.name.split(' ')[0],dn=fn.length>8?fn.slice(0,7)+'.':fn,tw=ctx.measureText(dn).width+6;
-        ctx.textBaseline='top';ctx.fillStyle='rgba(0,0,0,.65)';ctx.beginPath();ctx.roundRect(x-tw/2,y+23,tw,14,3);ctx.fill();
-        ctx.fillStyle='white';ctx.font='bold 10px Arial';ctx.fillText(dn,x,y+24);ctx.textBaseline='alphabetic';
+        ctx.fillStyle='white';
+        ctx.font='bold 15px Arial';
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText(ini,x,y);
+
+        // Position badge above circle
+        var pcol=posColor[p.pa]||'#aaa';
+        ctx.fillStyle=pcol;
+        ctx.font='bold 10px Arial';
+        ctx.textBaseline='bottom';
+        ctx.fillText(posLabel[p.pa],x,y-R-3);
+
+        // Name below — BIGGER
+        var fn=p.name.split(' ')[0];
+        var dn=fn.length>9?fn.slice(0,8)+'.':fn;
+        ctx.font='bold 13px Arial';
+        ctx.textBaseline='top';
+        var tw=ctx.measureText(dn).width+10;
+        ctx.fillStyle='rgba(0,0,0,0.72)';
+        ctx.beginPath();ctx.roundRect(x-tw/2,y+R+4,tw,18,4);ctx.fill();
+        ctx.fillStyle='white';
+        ctx.fillText(dn,x,y+R+5);
+        ctx.textBaseline='alphabetic';
       });
     });
   }
-  drawT(tA,zA,'#2d5fa8');drawT(tB,zB,'#a82d2d');
+  drawT(tA,zA,'#cc5500');   // naranja oscuro
+  drawT(tB,zB,'#b8960c');   // amarillo oscuro
 }
+
 
 // ---- POST ----
 function renderPost(){
@@ -663,12 +794,12 @@ function renderHist(){
   el.innerHTML=historial.map(function(p){
     var d=new Date(p.created_at).toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
     var tA=p.team_a||[],tB=p.team_b||[];
-    var wl=p.winner==='empate'?'Empate':p.winner==='A'?'Gano Azul':'Gano Rojo';
+    var wl=p.winner==='empate'?'Empate':p.winner==='A'?'Gano Naranja':'Gano Amarillo';
     return '<div class="hitem">'
       +'<div style="font-size:11px;color:var(--tx2)">📅 '+d+'</div>'
       +'<div class="hscore">'+p.goles_a+' — '+p.goles_b+'</div>'
-      +'<div style="color:var(--blue);font-size:12px;font-weight:600;margin-bottom:3px">Azul: '+tA.map(function(x){return x.name;}).join(', ')+'</div>'
-      +'<div style="color:var(--red);font-size:12px;font-weight:600;margin-bottom:5px">Rojo: '+tB.map(function(x){return x.name;}).join(', ')+'</div>'
+      +'<div style="color:#ff8c00;font-size:12px;font-weight:600;margin-bottom:3px">Naranja: '+tA.map(function(x){return x.name;}).join(', ')+'</div>'
+      +'<div style="color:#ffd700;font-size:12px;font-weight:600;margin-bottom:5px">Amarillo: '+tB.map(function(x){return x.name;}).join(', ')+'</div>'
       +'<div style="text-align:center;font-size:13px;color:var(--gold);margin-bottom:5px">'+wl+'</div>'
       +(p.mvp_name?'<div class="mvp-tag">⭐ MVP: '+p.mvp_name+'</div>':'')
       +'<div style="margin-top:8px"><button class="btn b-dark b-sm" onclick="delPartido(\''+p.id+'\')">🗑️ Borrar</button></div>'

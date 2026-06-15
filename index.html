@@ -484,71 +484,53 @@ function sortear(){
   var ep=players.filter(function(p){return enrolled.has(String(p.id));});
   if(ep.length<2){toast('Anota al menos 2 jugadores');return;}
 
-  // Formation per team: 1 ARQ, 3 DEF, 2 MED, 2 DEL (8 players)
-  // We try to fill these slots for each team using player positions
-  // If not enough of a position, fill with multi-position players
-
   function sh(a){return a.slice().sort(function(){return Math.random()-.5;});}
+  var shuffled=sh(ep);
 
-  // FORMATION SLOTS per team
-  var FORMATION = [{pos:'ARQ',n:1},{pos:'DEF',n:3},{pos:'MED',n:2},{pos:'DEL',n:2}];
+  // Split into two equal pools alternating
+  var poolA=[],poolB=[];
+  shuffled.forEach(function(p,i){(i%2===0?poolA:poolB).push(p);});
 
-  // Score how well a player fits a position (higher = better fit)
-  // Primary pos = 3pts, secondary = 1pt, no pos = 0
-  function fitScore(player, pos){
-    var idx = player.positions.indexOf(pos);
-    if(idx < 0) return 0;
-    return idx === 0 ? 3 : 1; // all positions equal weight
-  }
+  // STRICT formation slots: always 1 ARQ, 3 DEF, 2 MED, 2 DEL
+  // Assign slots in order — prefer players whose positions include that role,
+  // but fill regardless so formation is always complete
+  function assignFormation(pool){
+    var slots=['ARQ','DEF','DEF','DEF','MED','MED','DEL','DEL'];
+    var available=pool.slice();
+    var team=[];
 
-  // Assign players to formation slots using greedy best-fit
-  function buildTeam(pool, formation){
-    var team = [];
-    var used = {};
-    var remaining = pool.slice();
-
-    formation.forEach(function(slot){
-      for(var s=0; s<slot.n; s++){
-        // Find best available player for this slot
-        var best = null, bestScore = -1;
-        remaining.forEach(function(p){
-          if(used[p.id]) return;
-          var sc = fitScore(p, slot.pos);
-          if(sc > bestScore){ bestScore = sc; best = p; }
-        });
-        if(best){
-          used[best.id] = true;
-          team.push(Object.assign({},best,{pa:slot.pos}));
-          remaining = remaining.filter(function(p){return p.id !== best.id;});
+    slots.forEach(function(pos){
+      // Find best match: player who has this pos listed
+      var best=null, bestIdx=-1;
+      available.forEach(function(p,i){
+        if(p.positions&&p.positions.indexOf(pos)>=0){
+          if(best===null){best=p;bestIdx=i;}
         }
+      });
+      // If no match found, just take first available
+      if(best===null&&available.length>0){
+        best=available[0]; bestIdx=0;
+      }
+      if(best!==null){
+        team.push(Object.assign({},best,{pa:pos}));
+        available.splice(bestIdx,1);
       }
     });
 
-    // Any leftover players (odd numbers) — assign best remaining position
-    remaining.forEach(function(p){
-      if(!used[p.id]){
-        // pick pos with fewest in team
-        var cnt={ARQ:0,DEF:0,MED:0,DEL:0};
-        team.forEach(function(x){cnt[x.pa]++;});
-        var best = ['DEF','MED','DEL','ARQ'].filter(function(pos){
-          return p.positions.indexOf(pos)>=0;
-        }).sort(function(a,b){return cnt[a]-cnt[b];})[0] || p.positions[0] || 'DEL';
-        team.push(Object.assign({},p,{pa:best}));
-      }
+    // If pool had extra players (odd total), append with balanced pos
+    available.forEach(function(p){
+      var cnt={ARQ:0,DEF:0,MED:0,DEL:0};
+      team.forEach(function(x){cnt[x.pa]++;});
+      var need=['ARQ','DEF','DEF','DEF','MED','MED','DEL','DEL'];
+      var posNeeded=need.find(function(pos){return cnt[pos]<need.filter(function(x){return x===pos;}).length;})||'DEL';
+      team.push(Object.assign({},p,{pa:posNeeded}));
     });
 
     return team;
   }
 
-  // Shuffle all enrolled, then split fairly
-  var shuffled = sh(ep);
-
-  // Interleave into two pools so each gets a fair mix
-  var poolA=[], poolB=[];
-  shuffled.forEach(function(p,i){ (i%2===0?poolA:poolB).push(p); });
-
-  var A = buildTeam(poolA, FORMATION);
-  var B = buildTeam(poolB, FORMATION);
+  var A=assignFormation(poolA);
+  var B=assignFormation(poolB);
 
   currentTeams={a:A,b:B};golesInd={};currentMvp=null;
   localStorage.setItem('c_teams',JSON.stringify(currentTeams));
@@ -576,60 +558,53 @@ function renderTeams(){
 // ---- CANVAS ----
 function genImg(){
   if(!currentTeams)return;
-  var W=700,H=1100;
+  var W=700,H=1150;
   var cvs=document.getElementById('cvs'),ctx=cvs.getContext('2d');
-  cvs.width=W; cvs.height=H;
+  cvs.width=W;cvs.height=H;
 
-  // Try loading padrino image
-  var img=new Image();
-  img.crossOrigin='anonymous';
-
-  function doRender(hasBg){
-    // Background
-    if(hasBg){
-      ctx.drawImage(img,0,0,W,H);
-      // Strong dark overlay so field is visible
-      var grad=ctx.createLinearGradient(0,0,0,H);
-      grad.addColorStop(0,  'rgba(0,0,0,0.90)');
-      grad.addColorStop(0.18,'rgba(0,0,0,0.60)');
-      grad.addColorStop(0.45,'rgba(0,0,0,0.35)');
-      grad.addColorStop(0.72,'rgba(0,0,0,0.60)');
-      grad.addColorStop(1,  'rgba(0,0,0,0.92)');
-      ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+  function render(bgImg){
+    if(bgImg){
+      // Draw padrino bg
+      ctx.drawImage(bgImg,0,0,W,H);
+      // Heavy dark overlay
+      ctx.fillStyle='rgba(0,0,0,0.78)';
+      ctx.fillRect(0,0,W,H);
     } else {
-      ctx.fillStyle='#0d1117'; ctx.fillRect(0,0,W,H);
+      ctx.fillStyle='#111';
+      ctx.fillRect(0,0,W,H);
     }
 
-    // ── HEADER ──
+    // HEADER
     ctx.textAlign='center';
+    ctx.shadowColor='rgba(0,0,0,0.8)';
+    ctx.shadowBlur=8;
     ctx.fillStyle='#f0b429';
-    ctx.font='bold 52px Arial Black, Arial';
-    ctx.fillText('LOS CRUDOS FC',W/2,58);
-
-    ctx.fillStyle='rgba(255,255,255,0.75)';
+    ctx.font='bold 56px Arial';
+    ctx.fillText('LOS CRUDOS FC',W/2,62);
+    ctx.fillStyle='rgba(255,255,255,0.8)';
     ctx.font='15px Arial';
-    ctx.fillText(new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'}).toUpperCase(),W/2,80);
+    ctx.fillText(new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'}).toUpperCase(),W/2,84);
+    ctx.fillStyle='#f0b42999';
+    ctx.font='bold italic 15px Arial';
+    ctx.fillText('Director Tecnico del Partido',W/2,105);
+    ctx.shadowBlur=0;
 
-    ctx.fillStyle='rgba(240,180,41,0.9)';
-    ctx.font='italic bold 16px Arial';
-    ctx.fillText('🎩 Director Técnico del Partido',W/2,103);
+    // FIELD
+    var FX=18,FY=118,FW=W-36,FH=H-152;
+    drawFieldCanvas(ctx,FX,FY,FW,FH);
 
-    // ── FIELD ──
-    var FX=18, FY=115, FW=W-36, FH=H-148;
-    drawField(ctx,FX,FY,FW,FH);
+    // TEAMS - each in own half
+    placeTeamCanvas(ctx,'TOP',   currentTeams.a,FX,FY,FW,FH,'#cc5500');
+    placeTeamCanvas(ctx,'BOTTOM',currentTeams.b,FX,FY,FW,FH,'#a07800');
 
-    // ── PLAYERS ──
-    placeTeam(ctx, currentTeams.a, FX,FY,FW,FH, 'TOP',    '#c85000'); // Naranja arriba
-    placeTeam(ctx, currentTeams.b, FX,FY,FW,FH, 'BOTTOM', '#b8960c'); // Amarillo abajo
-
-    // ── TEAM LABELS ──
-    ctx.font='bold 22px Arial';
-    ctx.textAlign='left';
-    ctx.fillStyle='#ff8c00';
-    ctx.fillText('🟠 NARANJA',22,H-14);
-    ctx.textAlign='right';
-    ctx.fillStyle='#ffd700';
-    ctx.fillText('AMARILLO 🟡',W-22,H-14);
+    // LABELS
+    ctx.shadowColor='rgba(0,0,0,0.9)';ctx.shadowBlur=6;
+    ctx.font='bold 24px Arial';
+    ctx.textAlign='left'; ctx.fillStyle='#ff8c00';
+    ctx.fillText('NARANJA',22,H-16);
+    ctx.textAlign='right'; ctx.fillStyle='#ffd700';
+    ctx.fillText('AMARILLO',W-22,H-16);
+    ctx.shadowBlur=0;
 
     var url=cvs.toDataURL('image/png');
     var a=document.createElement('a');
@@ -639,137 +614,103 @@ function genImg(){
     toast('Imagen descargada!');
   }
 
-  img.onload  = function(){ doRender(true);  };
-  img.onerror = function(){ doRender(false); };
-
-  // Convert IMG_PADRINO blob to object URL to avoid tainted canvas
-  try {
-    var b64 = IMG_PADRINO.split(',')[1];
-    var bin = atob(b64);
-    var arr = new Uint8Array(bin.length);
-    for(var i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
-    var blob = new Blob([arr],{type:'image/jpeg'});
-    img.src = URL.createObjectURL(blob);
-  } catch(e){
-    img.src = IMG_PADRINO;
-  }
+  // Load padrino: convert base64 to blob to avoid canvas taint
+  var b64data=IMG_PADRINO.replace(/^data:image\/[a-z]+;base64,/,'');
+  var byteChars=atob(b64data);
+  var byteArr=new Uint8Array(byteChars.length);
+  for(var i=0;i<byteChars.length;i++) byteArr[i]=byteChars.charCodeAt(i);
+  var blob=new Blob([byteArr],{type:'image/jpeg'});
+  var objUrl=URL.createObjectURL(blob);
+  var img=new Image();
+  img.onload=function(){ render(img); URL.revokeObjectURL(objUrl); };
+  img.onerror=function(){ render(null); URL.revokeObjectURL(objUrl); };
+  img.src=objUrl;
 }
 
-function drawField(ctx,FX,FY,FW,FH){
-  // Green field
+function drawFieldCanvas(ctx,FX,FY,FW,FH){
   ctx.fillStyle='#1e7d3a';
-  ctx.beginPath(); ctx.roundRect(FX,FY,FW,FH,8); ctx.fill();
-
-  // Stripes
+  ctx.beginPath();ctx.roundRect(FX,FY,FW,FH,8);ctx.fill();
   var sH=FH/8;
   for(var i=0;i<8;i++){
     if(i%2===0){ctx.fillStyle='rgba(0,0,0,0.06)';ctx.fillRect(FX,FY+i*sH,FW,sH);}
   }
-
-  ctx.strokeStyle='rgba(255,255,255,0.75)'; ctx.lineWidth=2.5;
-
-  // Border
+  ctx.strokeStyle='rgba(255,255,255,0.8)';ctx.lineWidth=2.5;
   ctx.strokeRect(FX,FY,FW,FH);
-
-  // Centre line
   var midY=FY+FH/2;
-  ctx.beginPath(); ctx.moveTo(FX,midY); ctx.lineTo(FX+FW,midY); ctx.stroke();
-
-  // Centre circle
-  var cx=FX+FW/2;
-  ctx.beginPath(); ctx.arc(cx,midY,52,0,Math.PI*2); ctx.stroke();
-  ctx.fillStyle='rgba(255,255,255,0.9)';
-  ctx.beginPath(); ctx.arc(cx,midY,5,0,Math.PI*2); ctx.fill();
-
-  // Top penalty box
-  var pbW=FW*0.52, pbH=FH*0.10;
-  ctx.strokeRect(FX+(FW-pbW)/2, FY, pbW, pbH);
-  var gbW=FW*0.28, gbH=FH*0.04;
-  ctx.strokeRect(FX+(FW-gbW)/2, FY, gbW, gbH);
-
-  // Bottom penalty box
-  ctx.strokeRect(FX+(FW-pbW)/2, FY+FH-pbH, pbW, pbH);
-  ctx.strokeRect(FX+(FW-gbW)/2, FY+FH-gbH, gbW, gbH);
+  ctx.beginPath();ctx.moveTo(FX,midY);ctx.lineTo(FX+FW,midY);ctx.stroke();
+  ctx.beginPath();ctx.arc(FX+FW/2,midY,52,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle='white';ctx.beginPath();ctx.arc(FX+FW/2,midY,5,0,Math.PI*2);ctx.fill();
+  var pbW=FW*0.52,pbH=FH*0.10,gbW=FW*0.28,gbH=FH*0.04;
+  ctx.strokeRect(FX+(FW-pbW)/2,FY,pbW,pbH);
+  ctx.strokeRect(FX+(FW-gbW)/2,FY,gbW,gbH);
+  ctx.strokeRect(FX+(FW-pbW)/2,FY+FH-pbH,pbW,pbH);
+  ctx.strokeRect(FX+(FW-gbW)/2,FY+FH-gbH,gbW,gbH);
 }
 
-function placeTeam(ctx, team, FX,FY,FW,FH, half, circleCol){
-  // FORMATION: 1 ARQ, 3 DEF, 2 MED, 2 DEL
-  // Each team occupies its own half of the field
-  // half='TOP'    => ARQ at top,    DEL near centre
-  // half='BOTTOM' => ARQ at bottom, DEL near centre
-
-  var isTop = (half==='TOP');
-
-  // Y fractions within the team's half (0=far end, 1=centre line)
-  // For TOP team:  ARQ=0.07, DEF=0.24, MED=0.40, DEL=0.54  (of full field)
-  // For BOT team:  ARQ=0.93, DEF=0.76, MED=0.60, DEL=0.46
-  var zones;
-  if(isTop){
-    zones = {ARQ:0.07, DEF:0.24, MED:0.40, DEL:0.54};
-  } else {
-    zones = {ARQ:0.93, DEF:0.76, MED:0.60, DEL:0.46};
-  }
+function placeTeamCanvas(ctx,half,team,FX,FY,FW,FH,col){
+  // TOP = naranja (ARQ near top, DEL near centre)
+  // BOTTOM = amarillo (ARQ near bottom, DEL near centre)
+  var isTop=(half==='TOP');
+  // Y positions as fraction of TOTAL field height
+  var Z=isTop
+    ? {ARQ:0.06, DEF:0.21, MED:0.36, DEL:0.47}
+    : {ARQ:0.94, DEF:0.79, MED:0.64, DEL:0.53};
 
   var posColor={ARQ:'#f0b429',DEF:'#4fc3f7',MED:'#81c784',DEL:'#ef5350'};
-  var R=28; // circle radius — bigger
+  var R=30;
 
-  // Group by assigned position
   var byPos={};
-  team.forEach(function(p){
-    if(!byPos[p.pa]) byPos[p.pa]=[];
-    byPos[p.pa].push(p);
-  });
+  team.forEach(function(p){if(!byPos[p.pa])byPos[p.pa]=[];byPos[p.pa].push(p);});
 
   ['ARQ','DEF','MED','DEL'].forEach(function(pos){
-    var ps=byPos[pos]; if(!ps||!ps.length) return;
-    var yFrac=zones[pos]||0.5;
-    var y=FY+FH*yFrac;
+    var ps=byPos[pos];if(!ps||!ps.length)return;
+    var y=FY+FH*(Z[pos]||0.5);
     var n=ps.length;
-
     ps.forEach(function(p,i){
       var x;
-      if(n===1)      x=FX+FW/2;
+      if(n===1) x=FX+FW/2;
       else if(n===2) x=FX+FW*(0.28+i*0.44);
       else if(n===3) x=FX+FW*(0.18+i*0.32);
-      else           x=FX+FW*((i+1)/(n+1));
+      else x=FX+FW*((i+1)/(n+1));
 
       // Shadow
-      ctx.fillStyle='rgba(0,0,0,0.45)';
-      ctx.beginPath(); ctx.arc(x+3,y+3,R,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='rgba(0,0,0,0.5)';
+      ctx.beginPath();ctx.arc(x+3,y+3,R,0,Math.PI*2);ctx.fill();
 
       // Circle
-      ctx.fillStyle=circleCol;
-      ctx.beginPath(); ctx.arc(x,y,R,0,Math.PI*2); ctx.fill();
-      ctx.strokeStyle='rgba(255,255,255,0.95)'; ctx.lineWidth=3;
-      ctx.stroke();
+      ctx.fillStyle=col;
+      ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='white';ctx.lineWidth=3;ctx.stroke();
 
-      // Initials — BIG
+      // Initials - LARGE
       var ini=p.name.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
       ctx.fillStyle='white';
-      ctx.font='bold 18px Arial';
-      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.font='bold 20px Arial';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.shadowColor='rgba(0,0,0,0.6)';ctx.shadowBlur=3;
       ctx.fillText(ini,x,y);
+      ctx.shadowBlur=0;
 
       // Position badge above
       var pcol=posColor[pos]||'white';
-      ctx.font='bold 12px Arial';
+      ctx.font='bold 13px Arial';
       ctx.textBaseline='bottom';
-      var bw=ctx.measureText(pos).width+12;
-      ctx.fillStyle='rgba(0,0,0,0.80)';
-      ctx.beginPath(); ctx.roundRect(x-bw/2, y-R-20, bw, 17, 3); ctx.fill();
+      var bw=ctx.measureText(pos).width+14;
+      ctx.fillStyle='rgba(0,0,0,0.85)';
+      ctx.beginPath();ctx.roundRect(x-bw/2,y-R-22,bw,18,4);ctx.fill();
       ctx.fillStyle=pcol;
-      ctx.fillText(pos, x, y-R-5);
+      ctx.fillText(pos,x,y-R-6);
 
-      // Name below — BIG
+      // Name below - LARGE
       var fn=p.name.split(' ')[0];
       var dn=fn.length>10?fn.slice(0,9)+'.':fn;
-      ctx.font='bold 16px Arial';
+      ctx.font='bold 18px Arial';
       ctx.textBaseline='top';
-      var nw=ctx.measureText(dn).width+14;
-      ctx.fillStyle='rgba(0,0,0,0.85)';
-      ctx.beginPath(); ctx.roundRect(x-nw/2, y+R+4, nw, 22, 4); ctx.fill();
+      var nw=ctx.measureText(dn).width+16;
+      ctx.fillStyle='rgba(0,0,0,0.88)';
+      ctx.beginPath();ctx.roundRect(x-nw/2,y+R+4,nw,24,5);ctx.fill();
       ctx.fillStyle='white';
-      ctx.fillText(dn, x, y+R+5);
+      ctx.fillText(dn,x,y+R+5);
       ctx.textBaseline='alphabetic';
     });
   });
